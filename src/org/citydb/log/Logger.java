@@ -33,6 +33,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Calendar;
+import java.util.function.BiConsumer;
 
 import org.citydb.api.controller.LogController;
 import org.citydb.api.log.LogLevel;
@@ -49,6 +50,7 @@ public class Logger implements LogController {
 	private boolean isLogToConsole = true;
 	private boolean isLogToFile = false;
 	private BufferedWriter logFile;
+	private BiConsumer<LogLevel, String> onLogMessage;
 
 	private Logger() {
 		// just to thwart instantiation
@@ -64,6 +66,10 @@ public class Logger implements LogController {
 
 	public void setDefaultFileLogLevel(LogLevel fileLogLevel) {
 		this.fileLogLevel = fileLogLevel;
+	}
+
+	public void setOnLogMessageHandler(BiConsumer<LogLevel, String> consumer) {
+		onLogMessage = consumer;
 	}
 
 	@Override
@@ -114,6 +120,10 @@ public class Logger implements LogController {
 				//
 			}
 		}
+
+		if (onLogMessage != null) {
+			onLogMessage.accept(type, msg);
+		}
 	}
 
 	@Override
@@ -146,6 +156,10 @@ public class Logger implements LogController {
 
 		if (fileLogLevel.ordinal() >= type.ordinal())
 			writeToFile(buffer.toString());
+
+		if (onLogMessage != null) {
+			onLogMessage.accept(type, message);
+		}
 	}
 
 	@Override
@@ -154,6 +168,10 @@ public class Logger implements LogController {
 			System.out.println(msg);
 
 		writeToFile(msg);
+
+		if (onLogMessage != null) {
+			onLogMessage.accept(LogLevel.INFO, msg);
+		}
 	}
 
 	public void writeToFile(String msg) {
